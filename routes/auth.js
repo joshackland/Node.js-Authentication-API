@@ -7,14 +7,13 @@ router.post("/register", async (req, res) => {
   const { error } = registerValidation(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
-  //Check if user exists in DB
+  //Check if email exists in DB
   const emailExists = await User.findOne({ email: req.body.email });
+  if (emailExists) return res.status(409).send("Email already exists");
 
   //Hash and salt password
   const salt = await bcrypt.genSalt(10);
   const hashPassword = await bcrypt.hash(req.body.password, salt);
-
-  if (emailExists) return res.status(400).send("Email already exists");
 
   const user = new User({
     name: req.body.name,
@@ -24,11 +23,10 @@ router.post("/register", async (req, res) => {
   });
   try {
     const savedUser = await user.save();
-    console.log("Successfully created user");
-    res.send(savedUser);
+    res.status(201).send(`Successfully created user`);
   } catch (err) {
     console.log("Something went wrong creating user: " + err);
-    res.status(400).send(err);
+    res.status(500).send(err);
   }
 });
 
